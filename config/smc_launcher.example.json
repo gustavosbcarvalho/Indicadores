@@ -1,0 +1,46 @@
+{
+  "mode": "paper",
+  "dry_run": true,
+  "account": {
+    "login": 0,
+    "password": "",
+    "server": ""
+  },
+  "mt5": {
+    "terminal_path": "",
+    "data_path": "",
+    "startup_timeout_seconds": 30
+  },
+  "chart": {
+    "symbol": "WIN$",
+    "symbol_candidates": [
+      "WIN$"
+    ],
+    "timeframe": "M1",
+    "template_name": ""
+  },
+  "indicator": {
+    "install_sources": true,
+    "compile_after_install": false,
+    "source_indicator": "MQL5/Indicators/SMC_Observacional_WIN.mq5",
+    "source_include_dir": "MQL5/Include/SMC",
+    "target_indicator_name": "SMC_Observacional_WIN.mq5"
+  },
+  "safety": {
+    "require_paper_environment": true,
+    "allowed_account_logins": [],
+    "allowed_servers": [],
+    "forbidden_server_keywords": [
+      "real",
+      "live"
+    ]
+  },
+  "automation": {
+    "attach_indicator_automatically": false,
+    "allow_gui_clicks": false
+  },
+  "logging": {
+    "log_dir": "logs",
+    "level": "INFO"
+  }
+}

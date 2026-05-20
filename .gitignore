@@ -1,6 +1,12 @@
 # MetaTrader 5 build outputs
 *.ex5
 
+# Local launcher overrides
+config/smc_launcher.local.json
+__pycache__/
+*.py[cod]
+logs/
+
 # MetaTrader and MetaEditor transient files
 *.log
 *.tmp
@@ -26,3 +32,4 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+!.vscode/tasks.json
