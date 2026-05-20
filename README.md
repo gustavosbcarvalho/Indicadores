@@ -2,13 +2,22 @@
 
 Projeto colaborativo para desenvolvimento de indicadores para MetaTrader 5.
 
+## Indicador inicial
+
+O primeiro modulo do projeto e o indicador observacional:
+
+```text
+MQL5/Indicators/SMC_Observacional_WIN.mq5
+```
+
+Ele desenha contexto SMC no grafico e grava eventos em CSV local. O indicador nao executa ordens e nao possui dependencia operacional com qualquer outro sistema.
+
 ## Estrutura
 
 ```text
 MQL5/
   Indicators/   indicadores .mq5
-  Include/      bibliotecas e helpers .mqh
-  Experts/      EAs de apoio, quando necessario
+  Include/SMC/  detectores, renderer, score e persistencia .mqh
 docs/           documentacao do projeto
 ```
 
@@ -53,3 +62,13 @@ No MetaTrader 5, a pasta de dados fica em:
 ```text
 Arquivo > Abrir Pasta de Dados
 ```
+
+## Compilacao
+
+1. Copie a pasta `MQL5/Include/SMC` para a pasta `MQL5/Include` do terminal.
+2. Copie `MQL5/Indicators/SMC_Observacional_WIN.mq5` para `MQL5/Indicators`.
+3. Abra o arquivo no MetaEditor.
+4. Compile.
+5. Anexe o indicador ao grafico do WIN em qualquer timeframe. As leituras internas usam M5 para liquidez e M1 para estrutura.
+
+Veja detalhes em `docs/smc-observacional.md`.
