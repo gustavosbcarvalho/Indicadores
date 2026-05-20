@@ -5,6 +5,7 @@
 config/smc_launcher.local.json
 __pycache__/
 *.py[cod]
+logs/
 
 # MetaTrader and MetaEditor transient files
 *.log

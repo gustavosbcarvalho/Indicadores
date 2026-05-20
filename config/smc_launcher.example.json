@@ -1,5 +1,11 @@
 {
   "mode": "paper",
+  "dry_run": true,
+  "account": {
+    "login": 0,
+    "password": "",
+    "server": ""
+  },
   "mt5": {
     "terminal_path": "",
     "data_path": "",

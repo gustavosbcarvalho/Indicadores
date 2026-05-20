@@ -9,6 +9,7 @@ or automate fragile GUI clicks.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import logging
 import os
@@ -28,9 +29,51 @@ except ImportError:  # pragma: no cover - used only outside Windows.
 
 
 REPO_ROOT = Path(__file__).resolve().parent
-DEFAULT_CONFIG_PATH = REPO_ROOT / "config" / "smc_launcher.json"
+DEFAULT_CONFIG_PATH = REPO_ROOT / "config" / "smc_launcher.local.json"
+EXAMPLE_CONFIG_PATH = REPO_ROOT / "config" / "smc_launcher.example.json"
 LOGGER_NAME = "smc_launcher"
 SUPPORTED_TIMEFRAMES = {"M1", "M5", "M15", "M30", "H1", "H4", "D1"}
+SAFE_DEFAULT_CONFIG: dict[str, Any] = {
+    "mode": "paper",
+    "dry_run": True,
+    "account": {
+        "login": 0,
+        "password": "",
+        "server": "",
+    },
+    "mt5": {
+        "terminal_path": "",
+        "data_path": "",
+        "startup_timeout_seconds": 30,
+    },
+    "chart": {
+        "symbol": "WIN$",
+        "symbol_candidates": ["WIN$"],
+        "timeframe": "M1",
+        "template_name": "",
+    },
+    "indicator": {
+        "install_sources": True,
+        "compile_after_install": False,
+        "source_indicator": "MQL5/Indicators/SMC_Observacional_WIN.mq5",
+        "source_include_dir": "MQL5/Include/SMC",
+        "target_indicator_name": "SMC_Observacional_WIN.mq5",
+    },
+    "safety": {
+        "require_paper_environment": True,
+        "allowed_account_logins": [],
+        "allowed_servers": [],
+        "forbidden_server_keywords": ["real", "live"],
+    },
+    "automation": {
+        "attach_indicator_automatically": False,
+        "allow_gui_clicks": False,
+    },
+    "logging": {
+        "log_dir": "logs",
+        "level": "INFO",
+    },
+}
 
 
 class LauncherError(Exception):
@@ -48,6 +91,7 @@ class SMCLauncher:
     def __init__(self, config: dict[str, Any], args: argparse.Namespace) -> None:
         self.config = config
         self.args = args
+        self.dry_run = bool(args.dry_run or config.get("dry_run", False))
         self.logger = logging.getLogger(LOGGER_NAME)
         self.results: list[StepResult] = []
         self.terminal_path: Path | None = None
@@ -151,7 +195,7 @@ class SMCLauncher:
         if self.terminal_path is None:
             raise LauncherError("Terminal MT5 nao foi localizado.")
 
-        if self.args.dry_run:
+        if self.dry_run:
             self.add_result("Abrir MT5", "DRY-RUN", f"Abriria {self.terminal_path}")
             return
 
@@ -200,7 +244,7 @@ class SMCLauncher:
             )
             return
 
-        if self.args.dry_run:
+        if self.dry_run:
             self.add_result("API MT5 Python", "DRY-RUN", "Nao inicializada em dry-run.")
             return
 
@@ -325,7 +369,7 @@ class SMCLauncher:
         )
         target_include = self.data_path / "MQL5" / "Include" / "SMC"
 
-        if self.args.dry_run:
+        if self.dry_run:
             self.add_result(
                 "Indicador",
                 "DRY-RUN",
@@ -351,7 +395,7 @@ class SMCLauncher:
             self.add_result("Compilacao", "WARN", "MetaEditor nao localizado para compilacao automatica.")
             return
 
-        if self.args.dry_run:
+        if self.dry_run:
             self.add_result("Compilacao", "DRY-RUN", f"Compilaria {target_indicator}")
             return
 
@@ -500,10 +544,26 @@ def main() -> int:
 
 
 def load_config(path: Path) -> dict[str, Any]:
-    if not path.is_file():
-        raise SystemExit(f"Config nao encontrado: {path}")
+    resolved_path = path.expanduser()
+    default_path = DEFAULT_CONFIG_PATH.expanduser()
+    if not resolved_path.is_absolute():
+        resolved_path = (REPO_ROOT / resolved_path).resolve()
 
-    with path.open("r", encoding="utf-8") as file:
+    if not resolved_path.is_file():
+        if resolved_path == default_path:
+            print(
+                "Config local nao encontrado: "
+                f"{DEFAULT_CONFIG_PATH.relative_to(REPO_ROOT)}\n"
+                "Para configurar a maquina, copie:\n"
+                "  cp config/smc_launcher.example.json config/smc_launcher.local.json\n"
+                "Rodando agora com defaults seguros em dry-run, sem senha e sem abrir terminal.",
+                file=sys.stderr,
+            )
+            return copy.deepcopy(SAFE_DEFAULT_CONFIG)
+
+        raise SystemExit(f"Config nao encontrado: {resolved_path}")
+
+    with resolved_path.open("r", encoding="utf-8") as file:
         config = json.load(file)
 
     return config

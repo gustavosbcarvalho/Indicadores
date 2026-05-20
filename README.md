@@ -83,6 +83,12 @@ Veja detalhes em `docs/smc-observacional.md`.
 
 ## Launcher
 
+Crie uma configuracao local ignorada pelo Git:
+
+```powershell
+cp config/smc_launcher.example.json config/smc_launcher.local.json
+```
+
 Validacao sem abrir terminal nem copiar arquivos:
 
 ```powershell

@@ -32,7 +32,7 @@ Ele pertence ao projeto `Indicadores` e nao depende do runtime do robo principal
 Arquivo versionado:
 
 ```text
-config/smc_launcher.json
+config/smc_launcher.example.json
 ```
 
 Para ajustes locais de maquina, crie uma copia ignorada pelo Git:
@@ -41,9 +41,21 @@ Para ajustes locais de maquina, crie uma copia ignorada pelo Git:
 config/smc_launcher.local.json
 ```
 
+Comando:
+
+```powershell
+cp config/smc_launcher.example.json config/smc_launcher.local.json
+```
+
+O launcher procura `config/smc_launcher.local.json` por padrao. Se esse arquivo nao existir, ele mostra uma orientacao clara e roda com defaults seguros em `dry_run`, sem senha e sem abrir o terminal.
+
 Campos principais:
 
 - `mode`: deve permanecer `paper`.
+- `dry_run`: deve iniciar como `true` no exemplo.
+- `account.login`: valor ficticio `0`.
+- `account.password`: vazio. O launcher nao exige nem usa senha para abrir o terminal.
+- `account.server`: vazio.
 - `mt5.terminal_path`: caminho opcional para `terminal64.exe`.
 - `mt5.data_path`: caminho opcional para a pasta de dados do MT5.
 - `chart.symbol`: simbolo do WIN no broker.
@@ -63,7 +75,7 @@ Validar sem abrir terminal nem copiar arquivos:
 python smc_launcher.py --dry-run --no-launch --no-install
 ```
 
-Executar com config padrao:
+Executar com config local padrao:
 
 ```powershell
 python smc_launcher.py
