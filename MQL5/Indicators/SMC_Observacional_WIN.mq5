@@ -36,9 +36,13 @@ input int InpWeightLiquidity = 10;
 input int InpWeightTrend = 10;
 
 input bool InpRenderVisual = true;
+input bool InpDrawLiquidity = true;
+input bool InpDrawStructure = true;
+input bool InpDrawFVG = true;
+input bool InpDrawVWAP = true;
 input bool InpClearObjectsOnInit = true;
 input bool InpRemoveObjectsOnDeinit = false;
-input string InpObjectPrefix = "SMC_OBS";
+input string InpObjectPrefix = "SMC_OBS_WIN_";
 input int InpLineExtendBars = 120;
 input int InpFVGExtendBars = 120;
 input int InpMaxRenderEvents = 350;
@@ -56,6 +60,7 @@ input color InpTextColor = C'235,235,235';
 input bool InpPersistCSV = true;
 input string InpCSVFileName = "SMC_Observacional_WIN.csv";
 input int InpMaxEventsInMemory = 2500;
+input bool InpDebugLogs = false;
 
 CSMCEventBus g_event_bus;
 CSMCLiquidityDetector g_liquidity_detector;
@@ -143,6 +148,10 @@ void ConfigureModules()
 
    g_renderer.Configure(InpObjectPrefix,
                         InpRenderVisual,
+                        InpDrawLiquidity,
+                        InpDrawStructure,
+                        InpDrawFVG,
+                        InpDrawVWAP,
                         point,
                         InpLineExtendBars,
                         InpFVGExtendBars,
@@ -157,7 +166,7 @@ void ConfigureModules()
                         InpFVGMitigatedColor,
                         InpTextColor);
 
-   g_persistence.Configure(InpPersistCSV, InpCSVFileName);
+   g_persistence.Configure(InpPersistCSV, InpCSVFileName, InpDebugLogs);
 }
 
 void RefreshSMC(const bool force)
@@ -198,6 +207,13 @@ void RefreshSMC(const bool force)
    g_renderer.Render(g_event_bus, g_score_state, g_sweep_context,
                      g_structure_context, g_vwap_state, g_fvg_context);
 
+   if(InpDebugLogs)
+   {
+      Print("SMC: refresh concluido. eventos=", g_event_bus.Count(),
+            " score=", g_score_state.value,
+            " direcao=", SMCDirectionToString(g_score_state.direction));
+   }
+
    ChartRedraw(0);
 }
 
@@ -209,7 +225,7 @@ int OnInit()
    ConfigureModules();
 
    if(InpClearObjectsOnInit)
-      g_renderer.ClearAll();
+      g_renderer.ClearManagedByPrefix();
 
    g_persistence.Initialize();
 
@@ -225,7 +241,7 @@ void OnDeinit(const int reason)
    EventKillTimer();
 
    if(InpRemoveObjectsOnDeinit)
-      g_renderer.ClearAll();
+      g_renderer.ClearCreatedObjects();
 }
 
 void OnTimer()

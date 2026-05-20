@@ -81,6 +81,23 @@ Campos exportados:
 - `details`
 - `key`
 
+O indicador usa a chave `key` para evitar duplicidade do mesmo evento na memoria e no arquivo CSV ja existente. Se o arquivo ja existe, as chaves anteriores sao carregadas na inicializacao.
+
+Se `FileOpen` falhar, o erro e registrado no log do MetaTrader.
+
+## Inputs de robustez visual
+
+- `InpObjectPrefix`: prefixo unico dos objetos no grafico. Padrao: `SMC_OBS_WIN_`.
+- `InpDrawLiquidity`: liga/desliga desenho de liquidez, swings, equal highs/lows e sweeps.
+- `InpDrawStructure`: liga/desliga desenho de BOS, CHOCH, displacement, continuation e mean reversion.
+- `InpDrawFVG`: liga/desliga desenho das zonas de FVG.
+- `InpDrawVWAP`: liga/desliga linha de VWAP.
+- `InpMaxRenderEvents`: limita quantos eventos recentes podem gerar objetos no grafico.
+- `InpPersistCSV`: liga/desliga persistencia CSV.
+- `InpDebugLogs`: liga/desliga logs informativos de diagnostico.
+
+Por padrao, o indicador processa apenas quando surge novo candle M1 ou M5. `InpProcessEveryTick` existe para diagnostico, mas deve permanecer desligado no uso normal.
+
 ## Compilacao
 
 1. Copie `MQL5/Include/SMC` para a pasta `MQL5/Include` do terminal.
@@ -97,3 +114,17 @@ Campos exportados:
 - Ajuste de sensibilidade por volatilidade do WIN.
 - Painel historico de ultimos eventos.
 - Modo de limpeza seletiva de objetos antigos.
+
+## Checklist pre-merge
+
+- Objetos usam prefixo unico `SMC_OBS_WIN_`.
+- `OnDeinit` remove apenas objetos registrados como criados pelo indicador na sessao atual.
+- Limpeza inicial por prefixo remove apenas objetos gerenciados e ocultos do proprio indicador.
+- CSV grava header apenas quando o arquivo nao existe ou esta vazio.
+- CSV carrega chaves existentes para evitar duplicar eventos ja persistidos.
+- Falhas de `FileOpen` sao registradas no log.
+- Processamento padrao ocorre apenas em novo candle M1/M5, nao a cada tick.
+- Objetos antigos no grafico sao limitados por `InpMaxRenderEvents`.
+- Flags visuais existem para liquidez, estrutura, FVG e VWAP.
+- Persistencia CSV e logs de debug podem ser ligados/desligados por input.
+- Codigo permanece sem `CTrade`, `OrderSend`, `Buy`, `Sell`, `PositionOpen`, `PositionClose` e `trade.mqh`.

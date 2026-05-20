@@ -8,11 +8,16 @@ class CSMCRenderer
 private:
    string m_prefix;
    bool m_enabled;
+   bool m_draw_liquidity;
+   bool m_draw_structure;
+   bool m_draw_fvg;
+   bool m_draw_vwap;
    double m_point;
    int m_line_extend_bars;
    int m_fvg_extend_bars;
    int m_max_render_events;
    ENUM_BASE_CORNER m_panel_corner;
+   string m_created_names[];
 
    color m_bullish_color;
    color m_bearish_color;
@@ -27,7 +32,49 @@ private:
 
    string NameFor(const string suffix)
    {
-      return m_prefix + "_" + SMCObjectSafe(suffix);
+      return m_prefix + SMCObjectSafe(suffix);
+   }
+
+   string NormalizePrefix(const string prefix)
+   {
+      string normalized = SMCObjectSafe(prefix);
+      if(normalized == "")
+         normalized = "SMC_OBS_WIN_";
+
+      const int length = StringLen(normalized);
+      if(StringSubstr(normalized, length - 1, 1) != "_")
+         normalized += "_";
+
+      return normalized;
+   }
+
+   bool IsRegisteredObject(const string name)
+   {
+      const int total = ArraySize(m_created_names);
+      for(int i = 0; i < total; i++)
+      {
+         if(m_created_names[i] == name)
+            return true;
+      }
+      return false;
+   }
+
+   void RegisterObject(const string name)
+   {
+      if(IsRegisteredObject(name))
+         return;
+
+      const int total = ArraySize(m_created_names);
+      ArrayResize(m_created_names, total + 1);
+      m_created_names[total] = name;
+   }
+
+   bool IsManagedPrefixObject(const string name)
+   {
+      if(StringFind(name, m_prefix) != 0)
+         return false;
+
+      return (bool)ObjectGetInteger(0, name, OBJPROP_HIDDEN);
    }
 
    color DirectionColor(const ESMCDirection direction)
@@ -60,6 +107,8 @@ private:
    {
       ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
       ObjectSetInteger(0, name, OBJPROP_HIDDEN, true);
+      ObjectSetString(0, name, OBJPROP_TOOLTIP, m_prefix + "managed");
+      RegisterObject(name);
    }
 
    void DrawRay(const string name,
@@ -167,6 +216,9 @@ private:
 
       if(event.type == SMC_EVENT_FVG)
       {
+         if(!m_draw_fvg)
+            return;
+
          DrawFVG(event);
          return;
       }
@@ -179,12 +231,25 @@ private:
          event.type == SMC_EVENT_EQUAL_HIGH ||
          event.type == SMC_EVENT_EQUAL_LOW)
       {
+         if(!m_draw_liquidity)
+            return;
+
          const ENUM_LINE_STYLE style = (event.type == SMC_EVENT_EQUAL_HIGH ||
                                         event.type == SMC_EVENT_EQUAL_LOW ? STYLE_DOT : STYLE_DASH);
          DrawRay(base_name + "_LINE", event.time, event.price, event_color, style, 1);
          DrawText(base_name + "_TXT", event.time, event.price, event.tag, event_color);
          return;
       }
+
+      if(event.type == SMC_EVENT_LIQUIDITY_SWEEP && !m_draw_liquidity)
+         return;
+
+      if((event.type == SMC_EVENT_BOS ||
+          event.type == SMC_EVENT_CHOCH ||
+          event.type == SMC_EVENT_DISPLACEMENT ||
+          event.type == SMC_EVENT_CONTINUATION ||
+          event.type == SMC_EVENT_MEAN_REVERSION) && !m_draw_structure)
+         return;
 
       DrawArrow(base_name + "_ARW", event.time, event.price, event.direction, event_color);
       DrawText(base_name + "_TXT", event.time,
@@ -233,8 +298,12 @@ private:
 public:
    CSMCRenderer()
    {
-      m_prefix = "SMC_OBS";
+      m_prefix = "SMC_OBS_WIN_";
       m_enabled = true;
+      m_draw_liquidity = true;
+      m_draw_structure = true;
+      m_draw_fvg = true;
+      m_draw_vwap = true;
       m_point = _Point;
       m_line_extend_bars = 120;
       m_fvg_extend_bars = 120;
@@ -255,6 +324,10 @@ public:
 
    void Configure(const string prefix,
                   const bool enabled,
+                  const bool draw_liquidity,
+                  const bool draw_structure,
+                  const bool draw_fvg,
+                  const bool draw_vwap,
                   const double point,
                   const int line_extend_bars,
                   const int fvg_extend_bars,
@@ -269,8 +342,12 @@ public:
                   const color fvg_mitigated_color,
                   const color text_color)
    {
-      m_prefix = prefix;
+      m_prefix = NormalizePrefix(prefix);
       m_enabled = enabled;
+      m_draw_liquidity = draw_liquidity;
+      m_draw_structure = draw_structure;
+      m_draw_fvg = draw_fvg;
+      m_draw_vwap = draw_vwap;
       m_point = point;
       m_line_extend_bars = MathMax(20, line_extend_bars);
       m_fvg_extend_bars = MathMax(20, fvg_extend_bars);
@@ -286,15 +363,30 @@ public:
       m_text_color = text_color;
    }
 
-   void ClearAll()
+   void ClearManagedByPrefix()
    {
       const int total = ObjectsTotal(0, -1, -1);
       for(int i = total - 1; i >= 0; i--)
       {
          const string name = ObjectName(0, i, -1, -1);
-         if(StringFind(name, m_prefix) == 0)
+         if(IsManagedPrefixObject(name))
             ObjectDelete(0, name);
       }
+
+      ArrayResize(m_created_names, 0);
+   }
+
+   void ClearCreatedObjects()
+   {
+      const int total = ArraySize(m_created_names);
+      for(int i = total - 1; i >= 0; i--)
+      {
+         const string name = m_created_names[i];
+         if(ObjectFind(0, name) >= 0)
+            ObjectDelete(0, name);
+      }
+
+      ArrayResize(m_created_names, 0);
    }
 
    void Render(CSMCEventBus &bus,
@@ -306,6 +398,8 @@ public:
    {
       if(!m_enabled)
          return;
+
+      ClearCreatedObjects();
 
       const int total = bus.Count();
       int start = total - m_max_render_events;
@@ -320,7 +414,8 @@ public:
             RenderEvent(event);
       }
 
-      DrawCurrentVWAP(vwap);
+      if(m_draw_vwap)
+         DrawCurrentVWAP(vwap);
 
       const color score_color = (score.klass == SMC_SCORE_STRONG ? m_bullish_color :
                                 (score.klass == SMC_SCORE_MEDIUM ? m_sweep_color :
