@@ -12,13 +12,21 @@ MQL5/Indicators/SMC_Observacional_WIN.mq5
 
 Ele desenha contexto SMC no grafico e grava eventos em CSV local. O indicador nao executa ordens e nao possui dependencia operacional com qualquer outro sistema.
 
+## Launcher seguro
+
+O utilitario `smc_launcher.py` prepara uma maquina PAPER com MetaTrader 5 para uso do indicador. Ele abre/valida o terminal quando possivel, copia os fontes para a pasta de dados do MT5 e orienta as etapas manuais de grafico.
+
+Ele nao envia ordens, nao importa modulos de robo, nao conecta a banco externo e nao usa automacao fragil de clique.
+
 ## Estrutura
 
 ```text
+config/        configuracao do launcher
 MQL5/
   Indicators/   indicadores .mq5
   Include/SMC/  detectores, renderer, score e persistencia .mqh
 docs/           documentacao do projeto
+smc_launcher.py launcher isolado para ambiente PAPER
 ```
 
 Arquivos fonte (`.mq5` e `.mqh`) entram no Git. Arquivos compilados (`.ex5`) e dados temporarios do terminal ficam fora do repositorio.
@@ -72,3 +80,13 @@ Arquivo > Abrir Pasta de Dados
 5. Anexe o indicador ao grafico do WIN em qualquer timeframe. As leituras internas usam M5 para liquidez e M1 para estrutura.
 
 Veja detalhes em `docs/smc-observacional.md`.
+
+## Launcher
+
+Validacao sem abrir terminal nem copiar arquivos:
+
+```powershell
+python smc_launcher.py --dry-run --no-launch --no-install
+```
+
+Veja detalhes em `docs/smc-launcher.md`.

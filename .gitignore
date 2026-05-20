@@ -1,6 +1,11 @@
 # MetaTrader 5 build outputs
 *.ex5
 
+# Local launcher overrides
+config/smc_launcher.local.json
+__pycache__/
+*.py[cod]
+
 # MetaTrader and MetaEditor transient files
 *.log
 *.tmp
